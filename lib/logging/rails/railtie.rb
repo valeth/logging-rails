@@ -15,12 +15,18 @@ module Logging::Rails
 
     initializer 'logging.configure', :before => 'initialize_logger' do |app|
       file = ::Rails.root.join('config/logging.rb')
-      load file if File.exists? file
+      load file if File.exist? file
       ::Logging::Rails.configuration.call(app.config) if ::Logging::Rails.configuration
     end
 
     initializer 'logging.initialize', :before => 'initialize_logger' do
-      ::Rails.logger = ::Logging::Logger[::Rails]
+      logger = ::Logging::Logger[::Rails]
+
+      if ::Rails.logger.respond_to? :broadcast_to
+        ::Rails.logger.broadcast_to logger
+      else
+        ::Rails.logger = logger
+      end
     end
 
     initializer 'logging.active_record.logger', :before => 'active_record.logger' do
